@@ -7,6 +7,7 @@ import PdfViewerButton from './PdfViewer';
 import { Loading } from '../components/Loading';
 
 
+
 export default function AppliedJobs() {
 
   const {state:{user}}=useContext(store)
@@ -23,7 +24,7 @@ export default function AppliedJobs() {
             console.log("not student")
             navigate("/recruiter")
         }
-  },[])
+  },[role, navigate]);
 
   useGetAppliedJobs(setAppliedJobs,setFetching,username)
   

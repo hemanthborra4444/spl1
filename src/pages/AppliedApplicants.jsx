@@ -17,6 +17,7 @@ export default function AppliedApplicants() {
 
   const navigate=useNavigate()
 
+  
   useEffect(()=>{
         if(role!=="Recruiter"){
             console.log("not Recruiter")

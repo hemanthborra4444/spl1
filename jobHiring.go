@@ -64,12 +64,14 @@ type User struct {
 }
 
 type ApplyJob struct {
-	JobTitle    string `json:"job_title"`
-	CompanyName string `json:"company_name"`
-	Resume      string `json:"resume"`
-	Username    string `json:"userName"`
-	PostedBy    string `json:"posted_by"`
+    Id           int    `json:"id"`
+    Username     string `json:"username"`
+    JobTitle     string `json:"job_title"`
+    CompanyName  string `json:"company_name"`
+    Resume       string `json:"resume"`
+    PostedBy     string `json:"posted_by"`
 }
+
 
 type JobDetails struct {
 	JobTitle            string `json:"job_title"`
@@ -90,6 +92,7 @@ type AppliedJobData struct {
 	CompanyName string `json:"company_name"`
 	JobTitle    string `json:"job_title"`
 }
+
 type Claims struct {
 	Username string `json:"userName"`
 	jwt.StandardClaims
@@ -303,29 +306,48 @@ func getAllAppliedJobsPerRecuiter(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "application/json")
 
 	err := json.NewDecoder(req.Body).Decode(&user)
-
 	if err != nil {
 		http.Error(resp, err.Error(), http.StatusBadRequest)
 		return
 	}
-	resp.Header().Set("Content-Type", "application/json")
-	rows, _ := db.Query("Select gs.first_name, gs.last_name, gs.email, gs.phone_number ,applied_jobs1.company_name, applied_jobs1.job_title,applied_jobs1.resume from golang_stud gs INNER JOIN applied_jobs1 ON gs.username=applied_jobs1.username where applied_jobs1.posted_by=?", user.UserName)
+
+	rows, err := db.Query(`
+		SELECT gs.first_name, gs.last_name, gs.email, gs.phone_number,
+			   aj.company_name, aj.job_title, aj.resume
+		FROM golang_stud gs
+		JOIN applied_jobs1 aj ON gs.username = aj.username
+		WHERE aj.posted_by = ?`, user.UserName)
+
+	if err != nil {
+		http.Error(resp, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	for rows.Next() {
 		var appliedJobData AppliedJobData
-		err := rows.Scan(&appliedJobData.FirstName, &appliedJobData.LastName, &appliedJobData.Email, &appliedJobData.PhoneNumber, &appliedJobData.CompanyName, &appliedJobData.JobTitle, &appliedJobData.Resume)
+		err := rows.Scan(
+			&appliedJobData.FirstName,
+			&appliedJobData.LastName,
+			&appliedJobData.Email,
+			&appliedJobData.PhoneNumber,
+			&appliedJobData.CompanyName,
+			&appliedJobData.JobTitle,
+			&appliedJobData.Resume,
+		)
 		if err != nil {
-			resp.WriteHeader(http.StatusBadRequest)
+			http.Error(resp, err.Error(), http.StatusBadRequest)
 			return
 		}
 		ResponseReturn.Data.AppliedJoblist = append(ResponseReturn.Data.AppliedJoblist, appliedJobData)
 	}
-	ResponseReturn.Respmessage = "All jobs Applied by candidates"
-	ResponseReturn.ResponseCode = 200
-	resp.WriteHeader(http.StatusOK)
-	jsonResp, _ := json.Marshal(ResponseReturn)
-	resp.Write(jsonResp)
 
+	ResponseReturn.ResponseCode = 200
+	ResponseReturn.Respmessage = "Fetched applicants"
+	jsonResp, _ := json.Marshal(ResponseReturn)
+	resp.WriteHeader(http.StatusOK)
+	resp.Write(jsonResp)
 }
+
 func applyJob(resp http.ResponseWriter, req *http.Request) {
 	enableCors(&resp)
 	fmt.Printf("apply job called")
@@ -374,10 +396,19 @@ func getJobsAppliedByUser(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	var ResponseReturn Response
-	rows, _ := db.Query("Select job_title,company_name,resume from applied_jobs1 where username= ?", user.UserName)
+	rows, _ := db.Query("SELECT id, username, job_title, company_name, resume, posted_by FROM applied_jobs1 WHERE username = ?", user.UserName)
+
 	for rows.Next() {
 		var appliedJobData ApplyJob
-		err := rows.Scan(&appliedJobData.JobTitle, &appliedJobData.CompanyName, &appliedJobData.Resume)
+err := rows.Scan(
+    &appliedJobData.Id,
+    &appliedJobData.Username,
+    &appliedJobData.JobTitle,
+    &appliedJobData.CompanyName,
+    &appliedJobData.Resume,
+    &appliedJobData.PostedBy,
+)
+
 		if err != nil {
 			resp.WriteHeader(http.StatusBadRequest)
 			return
