@@ -97,7 +97,7 @@ const AuthComponent = ({
                   color: "#174EA6",
                 }}
               >
-                CareerPilot
+                GradHire
               </h2>
             </div>
             <Form layout="vertical" onFinish={onSubmit}>

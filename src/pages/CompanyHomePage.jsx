@@ -121,7 +121,7 @@ const LandingPage = () => {
         }}
       >
         <h1 style={{ fontSize: "2.5rem", fontWeight: "900", color: "#174EA6" }}>
-          CareerPilot
+          GradHire
         </h1>
         <div style={{ display: "flex", gap: "1rem" }}>
           <Link to="/login">
